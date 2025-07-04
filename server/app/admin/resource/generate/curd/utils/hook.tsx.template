@@ -1,0 +1,244 @@
+import dayjs from "dayjs";
+import editForm from "../form/index.vue";
+import { message } from "@/utils/message";
+import { addDialog } from "@/components/ReDialog";
+import type { PaginationProps } from "@pureadmin/table";
+import type { FormItemProps } from "../utils/types";
+{{- if .Options.BatchDelete}}
+import { getKeyList, deviceDetection } from "@pureadmin/utils";
+{{- else}}
+import { deviceDetection } from "@pureadmin/utils";
+{{- end}}
+import {
+  get{{.EntityName}}List,
+{{- if .Options.Create}}
+  create{{.EntityName}},
+{{- end}}
+{{- if .Options.Update}}
+  update{{.EntityName}},
+{{- end}}
+{{- if .Options.Delete}}
+  delete{{.EntityName}},
+{{- end}}
+{{- if .Options.BatchDelete}}
+  batchDelete{{.EntityName}}s
+{{- end}}
+} from "@/api/{{.ModuleName}}";
+import {
+  ElMessageBox
+} from "element-plus";
+import {
+  type Ref,
+  h,
+  ref,
+  toRaw,
+  reactive,
+  onMounted
+} from "vue";
+
+export function use{{.EntityName}}(tableRef: Ref) {
+  const form = reactive({
+{{- range .Columns}}
+{{- if .IsQuery}}
+    {{.JsonField}}: {{if eq .GoType "string"}}""{{else if eq .GoType "int" "uint" "int64" "uint64"}}undefined{{else}}""{{end}},
+{{- end}}
+{{- end}}
+  });
+  const formRef = ref();
+  const dataList = ref([]);
+  const loading = ref(true);
+{{- if .Options.BatchDelete}}
+  const selectedNum = ref(0);
+  const multipleSelection = ref([]);
+{{- end}}
+  const pagination = reactive<PaginationProps>({
+    total: 0,
+    pageSize: 10,
+    currentPage: 1,
+    background: true
+  });
+  const columns: TableColumnList = [
+{{- if .Options.BatchDelete}}
+    {
+      type: "selection",
+      width: 55,
+      align: "left",
+      reserveSelection: true
+    },
+{{- end}}
+{{- range .Columns}}
+{{- if .IsList}}
+    {
+      label: "{{.ColumnComment}}",
+      prop: "{{.JsonField}}",
+{{- if eq .ColumnName "created_at" "updated_at"}}
+      minWidth: 90,
+      formatter: ({ {{.JsonField}} }) =>
+        dayjs({{.JsonField}}).format("YYYY-MM-DD HH:mm:ss")
+{{- else}}
+      minWidth: 90
+{{- end}}
+    },
+{{- end}}
+{{- end}}
+    {
+      label: "操作",
+      fixed: "right",
+      width: 180,
+      slot: "operation"
+    }
+  ];
+
+  function handleDelete(row) {
+{{- if .Options.Delete}}
+    delete{{.EntityName}}(row.id).then(() => {
+      message(`您删除了编号为${row.id}的这条数据`, { type: "success" });
+      onSearch();
+    });
+{{- end}}
+  }
+
+  function handleSizeChange(val: number) {
+    pagination.pageSize = val;
+    onSearch();
+  }
+
+  function handleCurrentChange(val: number) {
+    pagination.currentPage = val;
+    onSearch();
+  }
+
+{{- if .Options.BatchDelete}}
+  function handleSelectionChange(val) {
+    selectedNum.value = val.length;
+    multipleSelection.value = val;
+  }
+
+  function onSelectionCancel() {
+    selectedNum.value = 0;
+    multipleSelection.value = [];
+    tableRef.value.getTableRef().clearSelection();
+  }
+
+  function onbatchDel() {
+    if (multipleSelection.value.length === 0) {
+      message("请选择要删除的数据", { type: "warning" });
+      return;
+    }
+    const ids = getKeyList(multipleSelection.value, "id");
+    batchDelete{{.EntityName}}s(ids).then(() => {
+      message(`已删除${ids.length}条数据`, { type: "success" });
+      onSelectionCancel();
+      onSearch();
+    });
+  }
+{{- end}}
+
+  async function onSearch() {
+    loading.value = true;
+    const { data } = await get{{.EntityName}}List({
+      currentPage: pagination.currentPage,
+      pageSize: pagination.pageSize,
+      ...form
+    });
+    dataList.value = data.list;
+    pagination.total = data.total;
+    loading.value = false;
+  }
+
+  const resetForm = (formEl) => {
+    if (!formEl) return;
+    formEl.resetFields();
+    onSearch();
+  };
+
+  function openDialog(title = "新增", row?: FormItemProps) {
+    addDialog({
+      title: `${title}{{.TableComment}}`,
+      props: {
+        formInline: {
+          title,
+          // 如果是编辑模式，传递完整的row数据；如果是新增模式，使用默认值
+          ...(title === "新增" ? {
+{{- range .Columns}}
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+            {{.JsonField}}: {{if eq .GoType "string"}}""{{else if eq .GoType "int" "uint" "int64" "uint64"}}0{{else}}""{{end}},
+{{- end}}
+{{- end}}
+          } : {
+            id: row?.id,
+{{- range .Columns}}
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+            {{.JsonField}}: row?.{{.JsonField}} ?? {{if eq .GoType "string"}}""{{else if eq .GoType "int" "uint" "int64" "uint64"}}0{{else}}""{{end}},
+{{- end}}
+{{- end}}
+          })
+        }
+      },
+      width: "46%",
+      draggable: true,
+      fullscreen: deviceDetection(),
+      fullscreenIcon: true,
+      closeOnClickModal: false,
+      contentRenderer: () => h(editForm, { ref: formRef }),
+      beforeSure: (done, { options }) => {
+        const FormRef = formRef.value.getRef();
+        const curData = options.props.formInline as FormItemProps;
+        function chores() {
+          message(`您${title}了编号为${curData.id}的这条数据`, {
+            type: "success"
+          });
+          done();
+          onSearch();
+        }
+        FormRef.validate(valid => {
+          if (valid) {
+            if (title === "新增") {
+{{- if .Options.Create}}
+              create{{.EntityName}}(curData).then(() => {
+                chores();
+              });
+{{- end}}
+            } else {
+{{- if .Options.Update}}
+              update{{.EntityName}}(curData).then(() => {
+                chores();
+              });
+{{- end}}
+            }
+          }
+        });
+      }
+    });
+  }
+
+  onMounted(() => {
+    onSearch();
+  });
+
+  return {
+    form,
+    loading,
+    columns,
+    dataList,
+{{- if .Options.BatchDelete}}
+    selectedNum,
+{{- end}}
+    pagination,
+    onSearch,
+    resetForm,
+{{- if .Options.BatchDelete}}
+    onbatchDel,
+{{- end}}
+    openDialog,
+    handleDelete,
+    handleSizeChange,
+{{- if .Options.BatchDelete}}
+    onSelectionCancel,
+{{- end}}
+    handleCurrentChange,
+{{- if .Options.BatchDelete}}
+    handleSelectionChange
+{{- end}}
+  };
+}

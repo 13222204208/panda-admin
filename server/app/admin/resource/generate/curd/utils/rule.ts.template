@@ -1,0 +1,11 @@
+import { reactive } from "vue";
+import type { FormRules } from "element-plus";
+
+/** 自定义表单规则校验 */
+export const formRules = reactive(<FormRules>{
+{{- range .Columns}}
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at") .IsRequired}}
+  {{.JsonField}}: [{ required: true, message: "{{.ColumnComment}}为必填项", trigger: "blur" }],
+{{- end}}
+{{- end}}
+});

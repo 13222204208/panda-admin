@@ -1,0 +1,83 @@
+import { http } from "@/utils/http";
+import { baseUrlApi } from "./common/utils";
+
+type Result = {
+  success: boolean;
+  data?: any;
+};
+
+type ResultTable = {
+  success: boolean;
+  data?: {
+    /** 列表数据 */
+    list: Array<any>;
+    /** 总条目数 */
+    total?: number;
+    /** 每页显示条目个数 */
+    pageSize?: number;
+    /** 当前页数 */
+    currentPage?: number;
+  };
+};
+
+/** {{.TableComment}}数据类型 */
+type {{.EntityName}}Data = {
+{{- range .Columns}}
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+  {{.JsonField}}?: {{if eq .GoType "string"}}string{{else if eq .GoType "int" "uint" "int64" "uint64"}}number{{else}}any{{end}};
+{{- end}}
+{{- end}}
+};
+
+/** {{.TableComment}}更新数据类型 */
+type {{.EntityName}}UpdateData = {{.EntityName}}Data & {
+  id: number;
+};
+
+/** {{.TableComment}}查询参数类型 */
+type {{.EntityName}}QueryParams = {
+{{- range .Columns}}
+{{- if .IsQuery}}
+  {{.JsonField}}?: {{if eq .GoType "string"}}string{{else if eq .GoType "int" "uint" "int64" "uint64"}}number{{else}}any{{end}};
+{{- end}}
+{{- end}}
+  pageSize?: number;
+  currentPage?: number;
+};
+
+{{- if .Options.List}}
+/** 获取{{.TableComment}}列表 */
+export const get{{.EntityName}}List = (data?: {{.EntityName}}QueryParams) => {
+  return http.request<ResultTable>("get", baseUrlApi("{{.ModuleName}}"), { params: data });
+};
+{{- end}}
+
+{{- if .Options.Create}}
+/** 创建{{.TableComment}} */
+export const create{{.EntityName}} = (data: {{.EntityName}}Data) => {
+  return http.request<Result>("post", baseUrlApi("{{.ModuleName}}"), { data });
+};
+{{- end}}
+
+{{- if .Options.Update}}
+/** 更新{{.TableComment}} */
+export const update{{.EntityName}} = (data: {{.EntityName}}UpdateData) => {
+  return http.request<Result>("put", baseUrlApi(`{{.ModuleName}}/${data.id}`), { data });
+};
+{{- end}}
+
+{{- if .Options.Delete}}
+/** 删除{{.TableComment}} */
+export const delete{{.EntityName}} = (id: number) => {
+  return http.request<Result>("delete", baseUrlApi(`{{.ModuleName}}/${id}`));
+};
+{{- end}}
+
+{{- if .Options.BatchDelete}}
+/** 批量删除{{.TableComment}} */
+export const batchDelete{{.EntityName}}s = (ids: number[]) => {
+  return http.request<Result>("delete", baseUrlApi("{{.ModuleName}}/batch"), { data: { ids } });
+};
+{{- end}}
+
+export type { {{.EntityName}}Data, {{.EntityName}}UpdateData, {{.EntityName}}QueryParams };

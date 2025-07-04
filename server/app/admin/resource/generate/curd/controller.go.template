@@ -1,0 +1,49 @@
+// Package {{.PackageName}} {{.EntityName}}控制器
+package {{.PackageName}}
+
+import (
+	"context"
+
+	v1 "server/app/admin/api/{{.PackageName}}/v1"
+	"server/app/admin/internal/logic/{{.PackageName}}"
+)
+
+{{- if .Options.List}}
+// Get{{.EntityName}}List 获取{{.EntityName}}列表
+func (c *ControllerV1) Get{{.EntityName}}List(ctx context.Context, req *v1.Get{{.EntityName}}ListReq) (res *v1.Get{{.EntityName}}ListRes, err error) {
+	res, err = {{.PackageName}}.New().Get{{.EntityName}}List(ctx, *req)
+	return
+}
+{{- end}}
+
+{{- if .Options.Create}}
+// Create{{.EntityName}} 创建{{.EntityName}}
+func (c *ControllerV1) Create{{.EntityName}}(ctx context.Context, req *v1.Create{{.EntityName}}Req) (res *v1.Create{{.EntityName}}Res, err error) {
+	res, err = {{.PackageName}}.New().Create{{.EntityName}}(ctx, *req)
+	return
+}
+{{- end}}
+
+{{- if .Options.Update}}
+// Update{{.EntityName}} 更新{{.EntityName}}
+func (c *ControllerV1) Update{{.EntityName}}(ctx context.Context, req *v1.Update{{.EntityName}}Req) (res *v1.Update{{.EntityName}}Res, err error) {
+	res, err = {{.PackageName}}.New().Update{{.EntityName}}(ctx, *req)
+	return
+}
+{{- end}}
+
+{{- if .Options.Delete}}
+// Delete{{.EntityName}} 删除{{.EntityName}}
+func (c *ControllerV1) Delete{{.EntityName}}(ctx context.Context, req *v1.Delete{{.EntityName}}Req) (res *v1.Delete{{.EntityName}}Res, err error) {
+	res, err = {{.PackageName}}.New().Delete{{.EntityName}}(ctx, *req)
+	return
+}
+{{- end}}
+
+{{- if .Options.BatchDelete}}
+// BatchDelete{{.EntityName}} 批量删除{{.EntityName}}
+func (c *ControllerV1) BatchDelete{{.EntityName}}(ctx context.Context, req *v1.BatchDelete{{.EntityName}}Req) (res *v1.BatchDelete{{.EntityName}}Res, err error) {
+	res, err = {{.PackageName}}.New().BatchDelete{{.EntityName}}(ctx, *req)
+	return
+}
+{{- end}}

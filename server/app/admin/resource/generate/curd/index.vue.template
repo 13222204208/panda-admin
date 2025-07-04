@@ -1,0 +1,201 @@
+<script setup lang="ts">
+import { ref } from "vue";
+import { use{{.EntityName}} } from "./utils/hook";
+import { PureTableBar } from "@/components/RePureTableBar";
+import { useRenderIcon } from "@/components/ReIcon/src/hooks";
+import EditForm from "./form/index.vue";
+
+import Delete from "~icons/ep/delete";
+import EditPen from "~icons/ep/edit-pen";
+import Refresh from "~icons/ep/refresh";
+import AddFill from "~icons/ri/add-circle-line";
+
+defineOptions({
+  name: "{{.EntityName}}"
+});
+
+const formRef = ref();
+const tableRef = ref();
+
+const {
+  form,
+  loading,
+  columns,
+  dataList,
+{{- if .Options.BatchDelete}}
+  selectedNum,
+{{- end}}
+  pagination,
+  onSearch,
+  resetForm,
+{{- if .Options.BatchDelete}}
+  onbatchDel,
+{{- end}}
+  openDialog,
+  handleDelete,
+  handleSizeChange,
+{{- if .Options.BatchDelete}}
+  onSelectionCancel,
+{{- end}}
+  handleCurrentChange,
+{{- if .Options.BatchDelete}}
+  handleSelectionChange
+{{- end}}
+} = use{{.EntityName}}(tableRef);
+</script>
+
+<template>
+  <div class="main">
+    <el-form
+      ref="formRef"
+      :inline="true"
+      :model="form"
+      class="search-form bg-bg_color w-full pl-8 pt-[12px] overflow-auto"
+    >
+{{- range .Columns}}
+{{- if .IsQuery}}
+      <el-form-item label="{{.ColumnComment}}：" prop="{{.JsonField}}">
+{{- if eq .GoType "string"}}
+        <el-input
+          v-model="form.{{.JsonField}}"
+          placeholder="请输入{{.ColumnComment}}"
+          clearable
+          class="w-[180px]!"
+        />
+{{- else if eq .GoType "int" "uint" "int64" "uint64"}}
+        <el-input-number
+          v-model="form.{{.JsonField}}"
+          placeholder="请输入{{.ColumnComment}}"
+          clearable
+          class="w-[180px]!"
+        />
+{{- else}}
+        <el-input
+          v-model="form.{{.JsonField}}"
+          placeholder="请输入{{.ColumnComment}}"
+          clearable
+          class="w-[180px]!"
+        />
+{{- end}}
+      </el-form-item>
+{{- end}}
+{{- end}}
+      <el-form-item>
+        <el-button
+          type="primary"
+          :icon="useRenderIcon('ri/search-line')"
+          :loading="loading"
+          @click="onSearch"
+        >
+          搜索
+        </el-button>
+        <el-button :icon="useRenderIcon(Refresh)" @click="resetForm(formRef)">
+          重置
+        </el-button>
+      </el-form-item>
+    </el-form>
+
+    <PureTableBar title="{{.TableComment}}管理" :columns="columns" @refresh="onSearch">
+      <template #buttons>
+{{- if .Options.Create}}
+        <el-button
+          type="primary"
+          :icon="useRenderIcon(AddFill)"
+          @click="openDialog()"
+        >
+          新增{{.TableComment}}
+        </el-button>
+{{- end}}
+      </template>
+      <template v-slot="{ size, dynamicColumns }">
+{{- if .Options.BatchDelete}}
+        <div
+          v-if="selectedNum && selectedNum > 0"
+          v-motion-fade
+          class="bg-[var(--el-fill-color-light)] w-full h-[46px] mb-2 pl-4 flex items-center"
+        >
+          <div class="flex-auto">
+            <span
+              style="font-size: var(--el-font-size-base)"
+              class="text-[rgba(42,46,54,0.5)] dark:text-[rgba(220,220,242,0.5)]"
+            >
+              已选 {{ "{{ selectedNum }}" }} 项
+            </span>
+            <el-button type="primary" text @click="onSelectionCancel">
+              取消选择
+            </el-button>
+          </div>
+          <el-popconfirm title="是否确认删除?" @confirm="onbatchDel">
+            <template #reference>
+              <el-button type="danger" text class="mr-1!">
+                批量删除
+              </el-button>
+            </template>
+          </el-popconfirm>
+        </div>
+{{- end}}
+        <pure-table
+          ref="tableRef"
+          row-key="id"
+          adaptive
+          :adaptiveConfig="{ offsetBottom: 108 }"
+          align-whole="center"
+          table-layout="auto"
+          :loading="loading"
+          :size="size"
+          :data="dataList"
+          :columns="dynamicColumns"
+          :pagination="{ ...pagination, size }"
+          :header-cell-style="{
+            background: 'var(--el-fill-color-light)',
+            color: 'var(--el-text-color-primary)'
+          }"
+{{- if .Options.BatchDelete}}
+          @selection-change="handleSelectionChange"
+{{- end}}
+          @page-size-change="handleSizeChange"
+          @page-current-change="handleCurrentChange"
+        >
+          <template #operation="{ row }">
+{{- if .Options.Update}}
+            <el-button
+              class="reset-margin"
+              link
+              type="primary"
+              :size="size"
+              :icon="useRenderIcon(EditPen)"
+              @click="openDialog('修改', row)"
+            >
+              修改
+            </el-button>
+{{- end}}
+{{- if .Options.Delete}}
+            <el-popconfirm
+              :title="`是否确认删除编号为${row.id}的这条数据`"
+              @confirm="handleDelete(row)"
+            >
+              <template #reference>
+                <el-button
+                  class="reset-margin"
+                  link
+                  type="primary"
+                  :size="size"
+                  :icon="useRenderIcon(Delete)"
+                >
+                  删除
+                </el-button>
+              </template>
+            </el-popconfirm>
+{{- end}}
+          </template>
+        </pure-table>
+      </template>
+    </PureTableBar>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+:deep(.el-button:focus-visible) {
+  outline: none;
+}
+</style>

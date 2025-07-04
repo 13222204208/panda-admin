@@ -1,0 +1,50 @@
+# Node.js / Vue 3
+node_modules/
+dist/
+*.local
+.env
+.env.*.local
+.vitepress/dist
+coverage/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+npm-debug.log*
+
+# VSCode
+.vscode/
+
+# Mac系统文件
+.DS_Store
+
+# Go
+/bin/
+/build/
+/dist/
+/vendor/
+*.exe
+*.test
+*.out
+*.log
+*.prof
+*.tmp
+
+# Go Modules
+go.sum
+go.work
+go.work.sum
+
+# 忽略 IDE 相关
+.idea/
+*.iml
+
+# 如果有前后端分离目录结构，分别在对应目录添加额外忽略：
+# 如： frontend/ 和 backend/
+
+# 日志文件
+*.log
+
+# 临时文件
+*.swp
+*.swo
+*.bak

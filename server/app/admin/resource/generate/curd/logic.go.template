@@ -1,0 +1,208 @@
+package {{.PackageName}}
+
+import (
+	"context"
+
+	"github.com/gogf/gf/v2/errors/gerror"
+	"github.com/gogf/gf/v2/frame/g"
+
+	"server/app/admin/api/common/page"
+	v1 "server/app/admin/api/{{.PackageName}}/v1"
+	"server/app/admin/internal/dao"
+	"server/app/admin/internal/model/entity"
+)
+
+type s{{.EntityName}} struct{}
+
+func New() *s{{.EntityName}} {
+	return &s{{.EntityName}}{}
+}
+
+{{if .Options.List}}
+// Get{{.EntityName}}List 获取{{.TableComment}}列表
+func (s *s{{.EntityName}}) Get{{.EntityName}}List(ctx context.Context, in v1.Get{{.EntityName}}ListReq) (out *v1.Get{{.EntityName}}ListRes, err error) {
+	out = &v1.Get{{.EntityName}}ListRes{}
+
+	m := dao.{{.EntityName}}.Ctx(ctx)
+
+	// 构建查询条件
+{{- range .Columns}}
+{{- if .IsQuery}}
+	{{if eq .GoType "string"}}if in.{{.GoField}} != "" {
+		m = m.WhereLike(dao.{{$.EntityName}}.Columns().{{.GoField}}, "%"+in.{{.GoField}}+"%")
+	}{{else}}if in.{{.GoField}} != 0 {
+		m = m.Where(dao.{{$.EntityName}}.Columns().{{.GoField}}, in.{{.GoField}})
+	}{{end}}
+{{- end}}
+{{- end}}
+
+	// 获取总数
+	total, err := m.Count()
+	if err != nil {
+		return nil, gerror.Wrap(err, "查询{{.TableComment}}总数失败")
+	}
+
+	// 分页查询
+	// 初始化为空切片，确保返回空数组而不是null
+	list := make([]*entity.{{.EntityName}}, 0)
+	err = m.Page(in.CurrentPage, in.PageSize).
+		OrderDesc(dao.{{.EntityName}}.Columns().CreatedAt).
+		Scan(&list)
+	if err != nil {
+		return nil, gerror.Wrap(err, "查询{{.TableComment}}列表失败")
+	}
+
+	out.ResPage = page.ResPage{
+		Total:       int(total),
+		CurrentPage: in.CurrentPage,
+	}
+	out.List = list
+	return
+}
+{{end}}
+
+{{if .Options.Create}}
+// Create{{.EntityName}} 创建{{.TableComment}}
+func (s *s{{.EntityName}}) Create{{.EntityName}}(ctx context.Context, in v1.Create{{.EntityName}}Req) (out *v1.Create{{.EntityName}}Res, err error) {
+	out = &v1.Create{{.EntityName}}Res{}
+
+{{- range .Columns}}
+{{- if and .IsRequired (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+	// 验证必填字段
+	if in.{{.GoField}} == nil || {{if eq .GoType "string"}}*in.{{.GoField}} == ""{{else}}*in.{{.GoField}} == 0{{end}} {
+		return nil, gerror.New("{{.ColumnComment}}不能为空")
+	}
+{{- end}}
+{{- end}}
+
+{{- range .Columns}}
+{{- if and .IsUnique (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+	// 检查{{.ColumnComment}}唯一性
+	if in.{{.GoField}} != nil {
+		count, err := dao.{{$.EntityName}}.Ctx(ctx).Where(dao.{{$.EntityName}}.Columns().{{.GoField}}, *in.{{.GoField}}).Count()
+		if err != nil {
+			return nil, gerror.Wrap(err, "检查{{.ColumnComment}}唯一性失败")
+		}
+		if count > 0 {
+			return nil, gerror.New("{{.ColumnComment}}已存在")
+		}
+	}
+{{- end}}
+{{- end}}
+
+	// 构建插入数据
+	data := g.Map{}
+{{- range .Columns}}
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+	if in.{{.GoField}} != nil {
+		data[dao.{{$.EntityName}}.Columns().{{.GoField}}] = *in.{{.GoField}}
+	}
+{{- end}}
+{{- end}}
+
+	// 插入数据
+	_, err = dao.{{.EntityName}}.Ctx(ctx).Data(data).InsertAndGetId()
+	if err != nil {
+		return nil, gerror.Wrap(err, "创建{{.TableComment}}失败")
+	}
+	return
+}
+{{end}}
+
+{{if .Options.Update}}
+// Update{{.EntityName}} 更新{{.TableComment}}
+func (s *s{{.EntityName}}) Update{{.EntityName}}(ctx context.Context, in v1.Update{{.EntityName}}Req) (out *v1.Update{{.EntityName}}Res, err error) {
+	out = &v1.Update{{.EntityName}}Res{}
+
+	// 检查{{.TableComment}}是否存在
+	count, err := dao.{{.EntityName}}.Ctx(ctx).Where(dao.{{.EntityName}}.Columns().Id, in.Id).Count()
+	if err != nil {
+		return nil, gerror.Wrap(err, "查询{{.TableComment}}失败")
+	}
+	if count == 0 {
+		return nil, gerror.New("{{.TableComment}}不存在")
+	}
+
+{{- range .Columns}}
+{{- if and .IsUnique (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+	// 检查{{.ColumnComment}}唯一性（排除当前记录）
+	if in.{{.GoField}} != nil {
+		count, err := dao.{{$.EntityName}}.Ctx(ctx).
+			Where(dao.{{$.EntityName}}.Columns().{{.GoField}}, *in.{{.GoField}}).
+			WhereNot(dao.{{$.EntityName}}.Columns().Id, in.Id).
+			Count()
+		if err != nil {
+			return nil, gerror.Wrap(err, "检查{{.ColumnComment}}唯一性失败")
+		}
+		if count > 0 {
+			return nil, gerror.New("{{.ColumnComment}}已存在")
+		}
+	}
+{{- end}}
+{{- end}}
+
+	// 动态构建更新数据
+	updateData := g.Map{}
+{{- range .Columns}}
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+	if in.{{.GoField}} != nil {
+		updateData[dao.{{$.EntityName}}.Columns().{{.GoField}}] = *in.{{.GoField}}
+	}
+{{- end}}
+{{- end}}
+
+	// 更新数据
+	_, err = dao.{{.EntityName}}.Ctx(ctx).
+		Where(dao.{{.EntityName}}.Columns().Id, in.Id).
+		Data(updateData).
+		Update()
+	if err != nil {
+		return nil, gerror.Wrap(err, "更新{{.TableComment}}失败")
+	}
+
+	return
+}
+{{end}}
+
+{{if .Options.Delete}}
+// Delete{{.EntityName}} 删除{{.TableComment}}
+func (s *s{{.EntityName}}) Delete{{.EntityName}}(ctx context.Context, in v1.Delete{{.EntityName}}Req) (out *v1.Delete{{.EntityName}}Res, err error) {
+	out = &v1.Delete{{.EntityName}}Res{}
+
+	// 检查{{.TableComment}}是否存在
+	count, err := dao.{{.EntityName}}.Ctx(ctx).Where(dao.{{.EntityName}}.Columns().Id, in.Id).Count()
+	if err != nil {
+		return nil, gerror.Wrap(err, "查询{{.TableComment}}失败")
+	}
+	if count == 0 {
+		return nil, gerror.New("{{.TableComment}}不存在")
+	}
+
+	// 删除数据
+	_, err = dao.{{.EntityName}}.Ctx(ctx).Where(dao.{{.EntityName}}.Columns().Id, in.Id).Delete()
+	if err != nil {
+		return nil, gerror.Wrap(err, "删除{{.TableComment}}失败")
+	}
+
+	return
+}
+{{end}}
+
+{{if .Options.BatchDelete}}
+// BatchDelete{{.EntityName}} 批量删除{{.TableComment}}
+func (s *s{{.EntityName}}) BatchDelete{{.EntityName}}(ctx context.Context, in v1.BatchDelete{{.EntityName}}Req) (out *v1.BatchDelete{{.EntityName}}Res, err error) {
+	out = &v1.BatchDelete{{.EntityName}}Res{}
+
+	if len(in.Ids) == 0 {
+		return nil, gerror.New("请选择要删除的{{.TableComment}}")
+	}
+
+	// 批量删除
+	_, err = dao.{{.EntityName}}.Ctx(ctx).WhereIn(dao.{{.EntityName}}.Columns().Id, in.Ids).Delete()
+	if err != nil {
+		return nil, gerror.Wrap(err, "批量删除{{.TableComment}}失败")
+	}
+
+	return
+}
+{{end}}

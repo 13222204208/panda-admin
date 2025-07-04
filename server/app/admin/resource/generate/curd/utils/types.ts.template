@@ -1,0 +1,16 @@
+interface FormItemProps {
+  /** 用于判断是新增还是修改 */
+  title: string;
+  id?: number;
+{{- range .Columns}}
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+  {{.JsonField}}?: {{if eq .GoType "string"}}string{{else if eq .GoType "int" "uint" "int64" "uint64"}}number{{else}}any{{end}};
+{{- end}}
+{{- end}}
+}
+
+interface FormProps {
+  formInline: FormItemProps;
+}
+
+export type { FormItemProps, FormProps };

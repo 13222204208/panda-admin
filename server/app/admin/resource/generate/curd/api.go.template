@@ -1,0 +1,81 @@
+package v1
+
+import (
+	"server/app/admin/api/common/page"
+	"server/app/admin/internal/model/entity"
+	"github.com/gogf/gf/v2/frame/g"
+)
+
+// {{.EntityName}}Common {{.TableComment}}公共字段
+type {{.EntityName}}Common struct {
+{{- range .Columns}}
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
+	{{.GoField}} *{{.GoType}} `json:"{{.JsonField}},omitempty" {{if .IsRequired}}v:"required#请输入{{.ColumnComment}}"{{end}} dc:"{{.ColumnComment}}"`
+{{- end}}
+{{- end}}
+}
+
+{{if .Options.Create}}
+// Create{{.EntityName}}Req 创建{{.TableComment}}请求
+type Create{{.EntityName}}Req struct {
+    g.Meta `path:"/{{.ModuleName}}" method:"post" tags:"{{.TableComment}}" summary:"创建{{.TableComment}}"`
+    {{.EntityName}}Common
+}
+
+// Create{{.EntityName}}Res 创建{{.TableComment}}响应
+type Create{{.EntityName}}Res struct {}
+{{end}}
+
+{{if .Options.Update}}
+// Update{{.EntityName}}Req 更新{{.TableComment}}请求
+type Update{{.EntityName}}Req struct {
+    g.Meta `path:"/{{.ModuleName}}/{id}" method:"put" tags:"{{.TableComment}}" summary:"更新{{.TableComment}}"`
+    Id uint64 `json:"id" v:"required#请输入ID" dc:"ID"`
+    {{.EntityName}}Common
+}
+
+// Update{{.EntityName}}Res 更新{{.TableComment}}响应
+type Update{{.EntityName}}Res struct {}
+{{end}}
+
+{{if .Options.Delete}}
+// Delete{{.EntityName}}Req 删除{{.TableComment}}请求
+type Delete{{.EntityName}}Req struct {
+    g.Meta `path:"/{{.ModuleName}}/{id}" method:"delete" tags:"{{.TableComment}}" summary:"删除{{.TableComment}}"`
+    Id uint64 `json:"id" v:"required#请输入ID" dc:"ID"`
+}
+
+// Delete{{.EntityName}}Res 删除{{.TableComment}}响应
+type Delete{{.EntityName}}Res struct {}
+{{end}}
+
+{{if .Options.BatchDelete}}
+// BatchDelete{{.EntityName}}Req 批量删除{{.TableComment}}请求
+type BatchDelete{{.EntityName}}Req struct {
+    g.Meta `path:"/{{.ModuleName}}/batch" method:"delete" tags:"{{.TableComment}}" summary:"批量删除{{.TableComment}}"`
+    Ids []uint64 `json:"ids" v:"required#请输入ID列表" dc:"ID列表"`
+}
+
+// BatchDelete{{.EntityName}}Res 批量删除{{.TableComment}}响应
+type BatchDelete{{.EntityName}}Res struct {}
+{{end}}
+
+{{if .Options.List}}
+// Get{{.EntityName}}ListReq 获取{{.TableComment}}列表请求
+type Get{{.EntityName}}ListReq struct {
+    g.Meta `path:"/{{.ModuleName}}" method:"get" tags:"{{.TableComment}}" summary:"获取{{.TableComment}}列表"`
+    page.ReqPage
+{{- range .Columns}}
+{{- if .IsQuery}}
+    {{.GoField}} {{.GoType}} `json:"{{.JsonField}}" dc:"{{.ColumnComment}}"`
+{{- end}}
+{{- end}}
+}
+
+// Get{{.EntityName}}ListRes 获取{{.TableComment}}列表响应
+type Get{{.EntityName}}ListRes struct {
+    List []*entity.{{.EntityName}} `json:"list" dc:"{{.TableComment}}列表"`
+    page.ResPage
+}
+{{end}}
+
