@@ -24,6 +24,7 @@ type MemberColumns struct {
 	Id        string // 会员ID
 	Username  string // 用户名
 	Email     string // 邮箱
+	Img       string // 图片
 	Mobile    string // 手机号
 	CreatedAt string // 创建时间
 	UpdatedAt string // 更新时间
@@ -34,6 +35,7 @@ var memberColumns = MemberColumns{
 	Id:        "id",
 	Username:  "username",
 	Email:     "email",
+	Img:       "img",
 	Mobile:    "mobile",
 	CreatedAt: "created_at",
 	UpdatedAt: "updated_at",

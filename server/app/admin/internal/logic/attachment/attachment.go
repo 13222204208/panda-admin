@@ -122,9 +122,9 @@ func (s *sAttachment) Upload(ctx context.Context, req *v1.UploadReq) (res *v1.Up
 	}
 
 	// 生成访问URL
-	baseURL := g.Cfg().MustGet(ctx, "server.baseUrl", "http://localhost:8000").String()
-	fileURL := fmt.Sprintf("%s/%s", strings.TrimRight(baseURL, "/"), filePath)
-
+	// baseURL := g.Cfg().MustGet(ctx, "server.baseUrl", "http://localhost:8000").String()
+	// fileURL := fmt.Sprintf("%s/%s", strings.TrimRight(baseURL, "/"), filePath)
+	fileURL := "/" + filePath + "/" + originalName
 	// 从上下文获取当前用户信息
 	var uploaderId uint64
 	var uploaderName string
@@ -142,7 +142,7 @@ func (s *sAttachment) Upload(ctx context.Context, req *v1.UploadReq) (res *v1.Up
 		dao.Attachment.Columns().FileName:     fileName,
 		dao.Attachment.Columns().OriginalName: originalName,
 		dao.Attachment.Columns().FilePath:     filePath,
-		dao.Attachment.Columns().FileUrl:      fileURL + "/" + originalName,
+		dao.Attachment.Columns().FileUrl:      fileURL,
 		dao.Attachment.Columns().FileSize:     file.Size,
 		dao.Attachment.Columns().FileType:     mimeType,
 		dao.Attachment.Columns().FileExt:      extension,

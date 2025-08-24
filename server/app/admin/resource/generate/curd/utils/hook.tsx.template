@@ -24,14 +24,11 @@ import {
   batchDelete{{.EntityName}}s
 {{- end}}
 } from "@/api/{{.ModuleName}}";
-import {
-  ElMessageBox
-} from "element-plus";
+
 import {
   type Ref,
   h,
   ref,
-  toRaw,
   reactive,
   onMounted
 } from "vue";
@@ -195,14 +192,26 @@ export function use{{.EntityName}}(tableRef: Ref) {
           if (valid) {
             if (title === "新增") {
 {{- if .Options.Create}}
-              create{{.EntityName}}(curData).then(() => {
-                chores();
+              create{{.EntityName}}(curData).then((res) => {
+                if (res.code === 0) {
+                  chores();
+                } else {
+                  message(res.message || "操作失败", { type: "error" });
+                }
+              }).catch((error) => {
+                message(error.message || "网络错误", { type: "error" });
               });
 {{- end}}
             } else {
 {{- if .Options.Update}}
-              update{{.EntityName}}(curData).then(() => {
-                chores();
+              update{{.EntityName}}(curData).then((res) => {
+                if (res.code === 0) {
+                  chores();
+                } else {
+                  message(res.message || "操作失败", { type: "error" });
+                }
+              }).catch((error) => {
+                message(error.message || "网络错误", { type: "error" });
               });
 {{- end}}
             }

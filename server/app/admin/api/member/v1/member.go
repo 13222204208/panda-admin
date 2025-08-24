@@ -9,8 +9,9 @@ import (
 // MemberCommon 会员信息表公共字段
 type MemberCommon struct {
 	Username *string `json:"username,omitempty" v:"required#请输入用户名" dc:"用户名"`
-	Email *string `json:"email,omitempty"  dc:"邮箱"`
-	Mobile *string `json:"mobile,omitempty" v:"required#请输入手机号" dc:"手机号"`
+	Email *string `json:"email,omitempty" v:"required#请输入邮箱" dc:"邮箱"`
+	Img *string `json:"img,omitempty"  dc:"图片"`
+	Mobile *string `json:"mobile,omitempty"  dc:"手机号"`
 }
 
 

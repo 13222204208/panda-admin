@@ -6,12 +6,12 @@ import type { PaginationProps } from "@pureadmin/table";
 import type { FormItemProps } from "../utils/types";
 import { getKeyList, deviceDetection } from "@pureadmin/utils";
 import {
-  getMemberList,
-  createMember,
-  updateMember,
-  deleteMember,
-  batchDeleteMembers
-} from "@/api/member";
+  getProductList,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  batchDeleteProducts
+} from "@/api/product";
 
 import {
   type Ref,
@@ -21,10 +21,9 @@ import {
   onMounted
 } from "vue";
 
-export function useMember(tableRef: Ref) {
+export function useProduct(tableRef: Ref) {
   const form = reactive({
-    username: "",
-    email: "",
+    name: "",
   });
   const formRef = ref();
   const dataList = ref([]);
@@ -45,28 +44,48 @@ export function useMember(tableRef: Ref) {
       reserveSelection: true
     },
     {
-      label: "会员ID",
+      label: "商品ID",
       prop: "id",
       minWidth: 90
     },
     {
-      label: "用户名",
-      prop: "username",
+      label: "商品名称",
+      prop: "name",
       minWidth: 90
     },
     {
-      label: "邮箱",
-      prop: "email",
+      label: "商品描述",
+      prop: "description",
       minWidth: 90
     },
     {
-      label: "图片",
-      prop: "img",
+      label: "商品价格",
+      prop: "price",
       minWidth: 90
     },
     {
-      label: "手机号",
-      prop: "mobile",
+      label: "库存数量",
+      prop: "stock",
+      minWidth: 90
+    },
+    {
+      label: "商品主图URL",
+      prop: "main_image",
+      minWidth: 90
+    },
+    {
+      label: "商品轮播图URL数组(JSON格式)",
+      prop: "carousel_images",
+      minWidth: 90
+    },
+    {
+      label: "附件文件URL",
+      prop: "attachment",
+      minWidth: 90
+    },
+    {
+      label: "商品状态(1:上架,0:下架)",
+      prop: "status",
       minWidth: 90
     },
     {
@@ -77,6 +96,13 @@ export function useMember(tableRef: Ref) {
         dayjs(created_at).format("YYYY-MM-DD HH:mm:ss")
     },
     {
+      label: "更新时间",
+      prop: "updated_at",
+      minWidth: 90,
+      formatter: ({ updated_at }) =>
+        dayjs(updated_at).format("YYYY-MM-DD HH:mm:ss")
+    },
+    {
       label: "操作",
       fixed: "right",
       width: 180,
@@ -85,7 +111,7 @@ export function useMember(tableRef: Ref) {
   ];
 
   function handleDelete(row) {
-    deleteMember(row.id).then(() => {
+    deleteProduct(row.id).then(() => {
       message(`您删除了编号为${row.id}的这条数据`, { type: "success" });
       onSearch();
     });
@@ -117,7 +143,7 @@ export function useMember(tableRef: Ref) {
       return;
     }
     const ids = getKeyList(multipleSelection.value, "id");
-    batchDeleteMembers(ids).then(() => {
+    batchDeleteProducts(ids).then(() => {
       message(`已删除${ids.length}条数据`, { type: "success" });
       onSelectionCancel();
       onSearch();
@@ -126,7 +152,7 @@ export function useMember(tableRef: Ref) {
 
   async function onSearch() {
     loading.value = true;
-    const { data } = await getMemberList({
+    const { data } = await getProductList({
       currentPage: pagination.currentPage,
       pageSize: pagination.pageSize,
       ...form
@@ -144,22 +170,30 @@ export function useMember(tableRef: Ref) {
 
   function openDialog(title = "新增", row?: FormItemProps) {
     addDialog({
-      title: `${title}会员信息表`,
+      title: `${title}商品信息表`,
       props: {
         formInline: {
           title,
           // 如果是编辑模式，传递完整的row数据；如果是新增模式，使用默认值
           ...(title === "新增" ? {
-            username: "",
-            email: "",
-            img: "",
-            mobile: "",
+            name: "",
+            description: "",
+            price: "",
+            stock: "",
+            main_image: "",
+            carousel_images: "",
+            attachment: "",
+            status: "",
           } : {
             id: row?.id,
-            username: row?.username ?? "",
-            email: row?.email ?? "",
-            img: row?.img ?? "",
-            mobile: row?.mobile ?? "",
+            name: row?.name ?? "",
+            description: row?.description ?? "",
+            price: row?.price ?? "",
+            stock: row?.stock ?? "",
+            main_image: row?.main_image ?? "",
+            carousel_images: row?.carousel_images ?? "",
+            attachment: row?.attachment ?? "",
+            status: row?.status ?? "",
           })
         }
       },
@@ -182,7 +216,7 @@ export function useMember(tableRef: Ref) {
         FormRef.validate(valid => {
           if (valid) {
             if (title === "新增") {
-              createMember(curData).then((res) => {
+              createProduct(curData).then((res) => {
                 if (res.code === 0) {
                   chores();
                 } else {
@@ -192,7 +226,7 @@ export function useMember(tableRef: Ref) {
                 message(error.message || "网络错误", { type: "error" });
               });
             } else {
-              updateMember(curData).then((res) => {
+              updateProduct(curData).then((res) => {
                 if (res.code === 0) {
                   chores();
                 } else {

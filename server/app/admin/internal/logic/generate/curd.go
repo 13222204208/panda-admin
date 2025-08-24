@@ -225,6 +225,8 @@ func convertToColumns(apiColumns interface{}) []curd.Column {
 				IsList:         colInfo.IsList,                        // 判断是否用于列表显示
 				IsPointer:      true,                                  // 可空字段使用指针
 				IsUnique:       colInfo.IsUnique,                      // 是否唯一
+				IsEdit:         colInfo.IsEdit,                        // 是否编辑
+				HtmlType:       colInfo.HtmlType,                      // 前端组件类型
 				ValidationRule: colInfo.ValidationRules,               // 生成验证规则
 			}
 			columns = append(columns, column)

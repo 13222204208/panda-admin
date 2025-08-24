@@ -7,6 +7,8 @@ import type { FormItemProps } from "../utils/types";
 import type { PaginationProps } from "@pureadmin/table";
 import { deviceDetection } from "@pureadmin/utils";
 import { reactive, ref, h } from "vue";
+import { getFileUrl } from "@/utils/env";
+
 import {
   getAttachmentList,
   updateAttachment,
@@ -55,10 +57,12 @@ export function useAttachment() {
       width: 80,
       cellRenderer: ({ row }) => {
         if (row.isImage && row.fileUrl) {
+          const fullImageUrl = getFileUrl(row.fileUrl);
+          console.log("完整图片URL:", fullImageUrl);
           return (
             <ElImage
-              src={row.fileUrl}
-              preview-src-list={[row.fileUrl]}
+              src={fullImageUrl}
+              preview-src-list={[fullImageUrl]}
               fit="cover"
               class="w-[40px] h-[40px] rounded cursor-pointer"
               preview-teleported={true}

@@ -21,22 +21,32 @@ type ProductDao struct {
 
 // ProductColumns defines and stores column names for the table product.
 type ProductColumns struct {
-	Id        string // 商品ID
-	Name      string // 商品名称
-	Price     string // 商品价格
-	Stock     string // 商品库存
-	CreatedAt string // 创建时间
-	UpdatedAt string // 更新时间
+	Id             string // 商品ID
+	Name           string // 商品名称
+	Description    string // 商品描述
+	Price          string // 商品价格
+	Stock          string // 库存数量
+	MainImage      string // 商品主图URL
+	CarouselImages string // 商品轮播图URL数组(JSON格式)
+	Attachment     string // 附件文件URL
+	Status         string // 商品状态(1:上架,0:下架)
+	CreatedAt      string // 创建时间
+	UpdatedAt      string // 更新时间
 }
 
 // productColumns holds the columns for the table product.
 var productColumns = ProductColumns{
-	Id:        "id",
-	Name:      "name",
-	Price:     "price",
-	Stock:     "stock",
-	CreatedAt: "created_at",
-	UpdatedAt: "updated_at",
+	Id:             "id",
+	Name:           "name",
+	Description:    "description",
+	Price:          "price",
+	Stock:          "stock",
+	MainImage:      "main_image",
+	CarouselImages: "carousel_images",
+	Attachment:     "attachment",
+	Status:         "status",
+	CreatedAt:      "created_at",
+	UpdatedAt:      "updated_at",
 }
 
 // NewProductDao creates and returns a new DAO object for table data access.

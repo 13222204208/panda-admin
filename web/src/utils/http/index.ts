@@ -18,6 +18,8 @@ import { useUserStoreHook } from "@/store/modules/user";
 const defaultConfig: AxiosRequestConfig = {
   // 请求超时时间
   timeout: 60000,
+  // 添加基础URL配置
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/admin",
   headers: {
     Accept: "application/json, text/plain, */*",
     "Content-Type": "application/json",

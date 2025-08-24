@@ -15,6 +15,7 @@ type Member struct {
 	Id        interface{} // 会员ID
 	Username  interface{} // 用户名
 	Email     interface{} // 邮箱
+	Img       interface{} // 图片
 	Mobile    interface{} // 手机号
 	CreatedAt *gtime.Time // 创建时间
 	UpdatedAt *gtime.Time // 更新时间

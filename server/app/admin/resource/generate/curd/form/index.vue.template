@@ -3,13 +3,24 @@ import { ref } from "vue";
 import ReCol from "@/components/ReCol";
 import { formRules } from "../utils/rule";
 import { FormProps } from "../utils/types";
+import ImageSelector from "@/components/ImageSelector";
+import type { AttachmentInfo } from "@/api/attachment";
+import { getFileUrl } from "@/utils/env";
+
+// 导入图标组件
+import Plus from "~icons/ep/plus";
+import ZoomIn from "~icons/ep/zoom-in";
+import Delete from "~icons/ep/delete";
+import Upload from "~icons/ep/upload";
+import Document from "~icons/ep/document";
+import Close from "~icons/ep/close";
 
 const props = withDefaults(defineProps<FormProps>(), {
   formInline: () => ({
     title: "新增",
 {{- range .Columns}}
-{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
-    {{.JsonField}}: {{if eq .GoType "string"}}""{{else if eq .GoType "int" "uint" "int64" "uint64"}}0{{else}}""{{end}},
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at") .IsEdit}}
+    {{.JsonField}}: {{if eq .GoType "string"}}""{{else if eq .GoType "int" "uint" "int64" "uint64"}}0{{else if or (eq .HtmlType "SelectMultiple") (eq .HtmlType "Checkbox") (eq .HtmlType "UploadImages") (eq .HtmlType "UploadFiles")}}[]{{else if eq .HtmlType "InputDynamic"}}]{{else}}""{{end}},
 {{- end}}
 {{- end}}
   })
@@ -23,6 +34,35 @@ function getRef() {
 }
 
 defineExpose({ getRef });
+
+// 图片预览
+const previewImage = (image: AttachmentInfo | string) => {
+  const url = image && image.fileUrl ? getFileUrl(image.fileUrl) : getFileUrl(image);
+  // 可以使用 el-image-viewer 或其他预览组件
+  window.open(url, '_blank');
+};
+
+// 移除图片
+const removeImage = (fieldName: string, index: number) => {
+  if (Array.isArray(newFormInline.value[fieldName])) {
+    newFormInline.value[fieldName].splice(index, 1);
+  }
+};
+
+// 动态键值对相关方法
+const addDynamicItem = (fieldName: string) => {
+  if (!newFormInline.value[fieldName]) {
+    newFormInline.value[fieldName] = {};
+  }
+  const key = `key_${Date.now()}`;
+  newFormInline.value[fieldName][key] = '';
+};
+
+const removeDynamicItem = (fieldName: string, key: string) => {
+  if (newFormInline.value[fieldName] && newFormInline.value[fieldName][key] !== undefined) {
+    delete newFormInline.value[fieldName][key];
+  }
+};
 </script>
 
 <template>
@@ -34,22 +74,294 @@ defineExpose({ getRef });
   >
     <el-row :gutter="30">
 {{- range .Columns}}
-{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at")}}
-      <re-col :value="12" :xs="24" :sm="24">
+{{- if and (ne .ColumnName "id") (ne .ColumnName "created_at") (ne .ColumnName "updated_at") .IsEdit}}
+      <re-col :value="24" :xs="24" :sm="24">
         <el-form-item label="{{.ColumnComment}}" prop="{{.JsonField}}">
-{{- if eq .GoType "string"}}
+{{- if eq .HtmlType "Input"}}
+          <!-- 文本输入 -->
           <el-input
             v-model="newFormInline.{{.JsonField}}"
             clearable
             placeholder="请输入{{.ColumnComment}}"
           />
+{{- else if eq .HtmlType "InputNumber"}}
+          <!-- 数字输入 -->
+          <el-input-number
+            v-model="newFormInline.{{.JsonField}}"
+            placeholder="请输入{{.ColumnComment}}"
+            class="w-full"
+          />
+{{- else if eq .HtmlType "InputTextarea"}}
+          <!-- 文本域 -->
+          <el-input
+            v-model="newFormInline.{{.JsonField}}"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入{{.ColumnComment}}"
+          />
+{{- else if eq .HtmlType "InputEditor"}}
+          <!-- 富文本编辑器 -->
+          <div class="editor-container">
+            <!-- 这里需要集成富文本编辑器组件，如 wangEditor 或 quill -->
+            <el-input
+              v-model="newFormInline.{{.JsonField}}"
+              type="textarea"
+              :rows="6"
+              placeholder="请输入{{.ColumnComment}}（富文本编辑器）"
+            />
+          </div>
+{{- else if eq .HtmlType "InputDynamic"}}
+          <!-- 动态键值对 -->
+          <div class="dynamic-input">
+            <el-button type="primary" size="small" @click="addDynamicItem('{{.JsonField}}')">添加项</el-button>
+            <div v-for="(value, key) in newFormInline.{{.JsonField}}" :key="key" class="dynamic-item">
+              <el-input :model-value="key" placeholder="键" style="width: 40%" readonly />
+              <el-input v-model="newFormInline.{{.JsonField}}[key]" placeholder="值" style="width: 40%" />
+              <el-button type="danger" size="small" @click="removeDynamicItem('{{.JsonField}}', key)">删除</el-button>
+            </div>
+          </div>
+{{- else if eq .HtmlType "Date"}}
+          <!-- 日期选择(Y-M-D) -->
+          <el-date-picker
+            v-model="newFormInline.{{.JsonField}}"
+            type="date"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            placeholder="请选择{{.ColumnComment}}"
+            class="w-full"
+          />
+{{- else if eq .HtmlType "DateRange"}}
+          <!-- 日期范围选择 -->
+          <el-date-picker
+            v-model="newFormInline.{{.JsonField}}"
+            type="daterange"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            class="w-full"
+          />
+{{- else if eq .HtmlType "Time"}}
+          <!-- 时间选择(Y-M-D H:i:s) -->
+          <el-date-picker
+            v-model="newFormInline.{{.JsonField}}"
+            type="datetime"
+            format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            placeholder="请选择{{.ColumnComment}}"
+            class="w-full"
+          />
+{{- else if eq .HtmlType "TimeRange"}}
+          <!-- 时间范围选择 -->
+          <el-date-picker
+            v-model="newFormInline.{{.JsonField}}"
+            type="datetimerange"
+            format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            range-separator="至"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            class="w-full"
+          />
+{{- else if eq .HtmlType "Radio"}}
+          <!-- 单选按钮 -->
+          <el-radio-group v-model="newFormInline.{{.JsonField}}">
+            <!-- 这里可以根据字典类型动态加载选项 -->
+            <el-radio label="1">选项1</el-radio>
+            <el-radio label="2">选项2</el-radio>
+          </el-radio-group>
+{{- else if eq .HtmlType "Checkbox"}}
+          <!-- 复选按钮 -->
+          <el-checkbox-group v-model="newFormInline.{{.JsonField}}">
+            <!-- 这里可以根据字典类型动态加载选项 -->
+            <el-checkbox label="1">选项1</el-checkbox>
+            <el-checkbox label="2">选项2</el-checkbox>
+          </el-checkbox-group>
+{{- else if eq .HtmlType "Select"}}
+          <!-- 单选下拉框 -->
+          <el-select
+            v-model="newFormInline.{{.JsonField}}"
+            placeholder="请选择{{.ColumnComment}}"
+            clearable
+            class="w-full"
+          >
+            <!-- 这里可以根据字典类型动态加载选项 -->
+            <el-option label="选项1" value="1" />
+            <el-option label="选项2" value="2" />
+          </el-select>
+{{- else if eq .HtmlType "SelectMultiple"}}
+          <!-- 多选下拉框 -->
+          <el-select
+            v-model="newFormInline.{{.JsonField}}"
+            multiple
+            placeholder="请选择{{.ColumnComment}}"
+            clearable
+            class="w-full"
+          >
+            <!-- 这里可以根据字典类型动态加载选项 -->
+            <el-option label="选项1" value="1" />
+            <el-option label="选项2" value="2" />
+          </el-select>
+{{- else if eq .HtmlType "TreeSelect"}}
+          <!-- 树型选择 -->
+          <el-tree-select
+            v-model="newFormInline.{{.JsonField}}"
+            :data="[]"
+            placeholder="请选择{{.ColumnComment}}"
+            clearable
+            class="w-full"
+          />
+{{- else if eq .HtmlType "Cascader"}}
+          <!-- 级联选择 -->
+          <el-cascader
+            v-model="newFormInline.{{.JsonField}}"
+            :options="[]"
+            placeholder="请选择{{.ColumnComment}}"
+            clearable
+            class="w-full"
+          />
+{{- else if eq .HtmlType "UploadImage"}}
+          <!-- 单图上传 -->
+          <ImageSelector
+            v-model="newFormInline.{{.JsonField}}"
+            :multiple="false"
+            file-type="image"
+          >
+            <template #trigger="{ open }">
+              <div class="image-upload-trigger" @click="open">
+                <img 
+                  v-if="newFormInline.{{.JsonField}}" 
+                  :src="getFileUrl(newFormInline.{{.JsonField}})" 
+                  class="avatar" 
+                />
+                <div v-else class="upload-placeholder">
+                  <el-icon class="upload-icon"><Plus /></el-icon>
+                  <div class="upload-text">点击选择{{.ColumnComment}}</div>
+                </div>
+              </div>
+            </template>
+          </ImageSelector>
+{{- else if eq .HtmlType "UploadImages"}}
+          <!-- 多图上传 -->
+          <ImageSelector
+            v-model="newFormInline.{{.JsonField}}"
+            :multiple="true"
+            :max-count="9"
+            file-type="image"
+          >
+            <template #trigger="{ open }">
+              <div class="images-upload-container">
+                <!-- 已选择的图片预览 -->
+                <div class="selected-images">
+                  <div 
+                    v-for="(image, index) in (Array.isArray(newFormInline.{{.JsonField}}) ? newFormInline.{{.JsonField}} : (newFormInline.{{.JsonField}} ? JSON.parse(newFormInline.{{.JsonField}}) : []))" 
+                    :key="index" 
+                    class="image-preview"
+                  >
+                    <img 
+                      :src="getFileUrl(image)" 
+                      class="preview-img" 
+                    />
+                    <div class="image-overlay">
+                      <el-icon class="preview-icon" @click.stop="previewImage(image)">
+                        <ZoomIn />
+                      </el-icon>
+                      <el-icon class="remove-icon" @click.stop="removeImage('{{.JsonField}}', index)">
+                        <Delete />
+                      </el-icon>
+                    </div>
+                  </div>
+                </div>
+                <!-- 添加图片按钮 -->
+                <div class="add-image-btn" @click="open">
+                  <el-icon class="add-icon"><Plus /></el-icon>
+                  <div class="add-text">添加{{.ColumnComment}}</div>
+                </div>
+              </div>
+            </template>
+          </ImageSelector>
+{{- else if eq .HtmlType "UploadFile"}}
+          <!-- 单文件上传 -->
+          <ImageSelector
+            v-model="newFormInline.{{.JsonField}}"
+            :multiple="false"
+            file-type="file"
+          >
+            <template #trigger="{ open }">
+              <div class="file-upload-container">
+                <el-button type="primary" @click="open">
+                  <el-icon><Upload /></el-icon>
+                  点击选择{{.ColumnComment}}
+                </el-button>
+                <div v-if="newFormInline.{{.JsonField}}" class="selected-file">
+                  <el-icon><Document /></el-icon>
+                  <span class="file-name">
+                    {{`{{ (newFormInline.`}}{{.JsonField}}{{` || '').split('/').pop() || '已选择文件' }}`}}
+                  </span>
+                  <el-icon class="remove-file" @click.stop="newFormInline.{{.JsonField}} = null">
+                    <Close />
+                  </el-icon>
+                </div>
+              </div>
+            </template>
+          </ImageSelector>
+{{- else if eq .HtmlType "UploadFiles"}}
+          <!-- 多文件上传 -->
+          <ImageSelector
+            v-model="newFormInline.{{.JsonField}}"
+            :multiple="true"
+            :max-count="10"
+            file-type="file"
+          >
+            <template #trigger="{ open }">
+              <div class="files-upload-container">
+                <el-button type="primary" @click="open">
+                  <el-icon><Upload /></el-icon>
+                  点击选择{{.ColumnComment}}
+                </el-button>
+                <!-- 已选择的文件列表 -->
+                <div v-if="newFormInline.{{.JsonField}} && (Array.isArray(newFormInline.{{.JsonField}}) ? newFormInline.{{.JsonField}}.length > 0 : newFormInline.{{.JsonField}})" class="selected-files">
+                  <div 
+                    v-for="(file, index) in (Array.isArray(newFormInline.{{.JsonField}}) ? newFormInline.{{.JsonField}} : (newFormInline.{{.JsonField}} ? JSON.parse(newFormInline.{{.JsonField}}) : []))" 
+                    :key="index" 
+                    class="file-item"
+                  >
+                    <el-icon><Document /></el-icon>
+                    <span class="file-name">
+                      {{`{{ file.split('/').pop() || '文件' + (index + 1) }}`}}
+                    </span>
+                    <el-icon class="remove-file" @click.stop="removeImage('{{.JsonField}}', index)">
+                      <Close />
+                    </el-icon>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </ImageSelector>
+{{- else if eq .HtmlType "Switch"}}
+          <!-- 开关 -->
+          <el-switch
+            v-model="newFormInline.{{.JsonField}}"
+            :active-value="1"
+            :inactive-value="0"
+          />
+{{- else if eq .HtmlType "Rate"}}
+          <!-- 评分 -->
+          <el-rate
+            v-model="newFormInline.{{.JsonField}}"
+            :max="5"
+            allow-half
+          />
 {{- else if eq .GoType "int" "uint" "int64" "uint64"}}
+          <!-- 默认数字类型使用数字输入框 -->
           <el-input-number
             v-model="newFormInline.{{.JsonField}}"
             placeholder="请输入{{.ColumnComment}}"
             class="w-full"
           />
 {{- else}}
+          <!-- 默认使用普通输入框 -->
           <el-input
             v-model="newFormInline.{{.JsonField}}"
             clearable
@@ -63,3 +375,217 @@ defineExpose({ getRef });
     </el-row>
   </el-form>
 </template>
+
+<style scoped>
+/* 单图上传样式 */
+.image-upload-trigger {
+  cursor: pointer;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: var(--el-transition-duration-fast);
+}
+
+.image-upload-trigger:hover {
+  border-color: var(--el-color-primary);
+}
+
+.avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
+  object-fit: cover;
+}
+
+.upload-placeholder {
+  width: 178px;
+  height: 178px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--el-fill-color-lighter);
+}
+
+.upload-icon {
+  font-size: 28px;
+  color: #8c939d;
+  margin-bottom: 8px;
+}
+
+.upload-text {
+  font-size: 14px;
+  color: var(--el-text-color-regular);
+}
+
+/* 多图上传样式 */
+.images-upload-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.selected-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.image-preview {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color);
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.image-preview:hover .image-overlay {
+  opacity: 1;
+}
+
+.preview-icon,
+.remove-icon {
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.preview-icon:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.remove-icon:hover {
+  background: var(--el-color-danger);
+}
+
+.add-image-btn {
+  width: 120px;
+  height: 120px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--el-transition-duration-fast);
+  background: var(--el-fill-color-lighter);
+}
+
+.add-image-btn:hover {
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.add-icon {
+  font-size: 24px;
+  color: var(--el-text-color-placeholder);
+  margin-bottom: 4px;
+}
+
+.add-text {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+
+/* 文件上传样式 */
+.file-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color);
+}
+
+.file-name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+}
+
+.remove-file {
+  cursor: pointer;
+  color: var(--el-text-color-placeholder);
+  transition: color 0.3s;
+}
+
+.remove-file:hover {
+  color: var(--el-color-danger);
+}
+
+.files-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selected-files {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color);
+}
+
+/* 动态键值对样式 */
+.dynamic-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dynamic-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dynamic-item .el-input {
+  flex: 1;
+}
+
+.dynamic-item .el-button {
+  flex-shrink: 0;
+}
+</style>

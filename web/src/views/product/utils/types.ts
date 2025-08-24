@@ -2,10 +2,14 @@ interface FormItemProps {
   /** 用于判断是新增还是修改 */
   title: string;
   id?: number;
-  username?: string;
-  email?: string;
-  img?: string;
-  mobile?: string;
+  name?: string;
+  description?: string;
+  price?: string;
+  stock?: string;
+  main_image?: string;
+  carousel_images?: string;
+  attachment?: string;
+  status?: string;
 }
 
 interface FormProps {

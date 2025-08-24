@@ -24,6 +24,7 @@ type ResultTable = {
 type MemberData = {
   username?: string;
   email?: string;
+  img?: string;
   mobile?: string;
 };
 

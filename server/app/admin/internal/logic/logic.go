@@ -11,6 +11,7 @@ import (
 	_ "server/app/admin/internal/logic/generate"
 	_ "server/app/admin/internal/logic/member"
 	_ "server/app/admin/internal/logic/menu"
+	_ "server/app/admin/internal/logic/product"
 	_ "server/app/admin/internal/logic/role"
 	_ "server/app/admin/internal/logic/user"
 )

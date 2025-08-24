@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import ReCol from "@/components/ReCol";
 import { formRules } from "../utils/rule";
 import { FormProps } from "../utils/types";
@@ -18,66 +18,32 @@ import Close from "~icons/ep/close";
 const props = withDefaults(defineProps<FormProps>(), {
   formInline: () => ({
     title: "新增",
-    username: "",
-    email: "",
-    img: "",
-    mobile: "",
+    name: "",
+    description: "",
+    price: "",
+    stock: "",
+    main_image: "",
+    carousel_images: "",
+    attachment: "",
+    status: ""
   })
 });
 
 const ruleFormRef = ref();
 const newFormInline = ref(props.formInline);
 
-// 转换AttachmentInfo对象为fileUrl字符串的工具函数
-const convertToFileUrl = (item: any): string | null => {
-  if (!item) return null;
-  
-  // 如果已经是字符串，直接返回
-  if (typeof item === 'string') {
-    return item;
-  }
-  
-  // 如果是AttachmentInfo对象，返回fileUrl
-  if (typeof item === 'object' && item.fileUrl) {
-    return item.fileUrl;
-  }
-  
-  return null;
-};
-
-// 获取表单数据，将AttachmentInfo转换为fileUrl字符串
-const getFormData = () => {
-  const formData = { ...newFormInline.value };
-  
-  // 处理文件上传字段，将AttachmentInfo对象转换为fileUrl字符串
-  // 单图上传：转换为fileUrl字符串
-  if (formData.img) {
-    const fileUrl = convertToFileUrl(formData.img);
-    formData.img = fileUrl || "";
-  }
-  // 多文件上传：转换为fileUrl字符串数组
-  if (Array.isArray(formData.mobile)) {
-    formData.mobile = formData.mobile
-      .map(item => convertToFileUrl(item))
-      .filter(url => url); // 过滤空值
-  }
-  
-  return formData;
-};
-
 function getRef() {
   return ruleFormRef.value;
 }
 
-// 暴露getFormData方法供父组件调用
-defineExpose({ getRef, getFormData });
+defineExpose({ getRef });
 
 // 图片预览
 const previewImage = (image: AttachmentInfo | string) => {
-  const url = convertToFileUrl(image);
-  if (url) {
-    window.open(getFileUrl(url), '_blank');
-  }
+  const url =
+    image && image.fileUrl ? getFileUrl(image.fileUrl) : getFileUrl(image);
+  // 可以使用 el-image-viewer 或其他预览组件
+  window.open(url, "_blank");
 };
 
 // 移除图片
@@ -93,11 +59,14 @@ const addDynamicItem = (fieldName: string) => {
     newFormInline.value[fieldName] = {};
   }
   const key = `key_${Date.now()}`;
-  newFormInline.value[fieldName][key] = '';
+  newFormInline.value[fieldName][key] = "";
 };
 
 const removeDynamicItem = (fieldName: string, key: string) => {
-  if (newFormInline.value[fieldName] && newFormInline.value[fieldName][key] !== undefined) {
+  if (
+    newFormInline.value[fieldName] &&
+    newFormInline.value[fieldName][key] !== undefined
+  ) {
     delete newFormInline.value[fieldName][key];
   }
 };
@@ -111,91 +80,166 @@ const removeDynamicItem = (fieldName: string, key: string) => {
     label-width="82px"
   >
     <el-row :gutter="30">
-      <re-col :value="12" :xs="24" :sm="24">
-        <el-form-item label="用户名" prop="username">
+      <re-col :value="24" :xs="24" :sm="24">
+        <el-form-item label="商品名称" prop="name">
+          <!-- 默认使用普通输入框 -->
+          <el-input
+            v-model="newFormInline.name"
+            clearable
+            placeholder="请输入商品名称"
+          />
+        </el-form-item>
+      </re-col>
+      <re-col :value="24" :xs="24" :sm="24">
+        <el-form-item label="商品描述" prop="description">
+          <!-- 默认使用普通输入框 -->
+          <el-input
+            v-model="newFormInline.description"
+            clearable
+            placeholder="请输入商品描述"
+          />
+        </el-form-item>
+      </re-col>
+      <re-col :value="24" :xs="24" :sm="24">
+        <el-form-item label="商品价格" prop="price">
           <!-- 数字输入 -->
           <el-input-number
-            v-model="newFormInline.username"
-            placeholder="请输入用户名"
+            v-model="newFormInline.price"
+            placeholder="请输入商品价格"
             class="w-full"
           />
         </el-form-item>
       </re-col>
-      <re-col :value="12" :xs="24" :sm="24">
-        <el-form-item label="邮箱" prop="email">
-          <!-- 日期选择(Y-M-D) -->
-          <el-date-picker
-            v-model="newFormInline.email"
-            type="date"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择邮箱"
+      <re-col :value="24" :xs="24" :sm="24">
+        <el-form-item label="库存数量" prop="stock">
+          <!-- 数字输入 -->
+          <el-input-number
+            v-model="newFormInline.stock"
+            placeholder="请输入库存数量"
             class="w-full"
           />
         </el-form-item>
       </re-col>
-      <re-col :value="12" :xs="24" :sm="24">
-        <el-form-item label="图片" prop="img">
+      <re-col :value="24" :xs="24" :sm="24">
+        <el-form-item label="商品主图URL" prop="main_image">
           <!-- 单图上传 -->
           <ImageSelector
-            v-model="newFormInline.img"
+            v-model="newFormInline.main_image"
             :multiple="false"
             file-type="image"
           >
             <template #trigger="{ open }">
               <div class="image-upload-trigger" @click="open">
-                <img 
-                  v-if="newFormInline.img" 
-                  :src="getFileUrl(convertToFileUrl(newFormInline.img) || '')" 
-                  class="avatar" 
+                <img
+                  v-if="newFormInline.main_image"
+                  :src="getFileUrl(newFormInline.main_image)"
+                  class="avatar"
                 />
                 <div v-else class="upload-placeholder">
                   <el-icon class="upload-icon"><Plus /></el-icon>
-                  <div class="upload-text">点击选择图片</div>
+                  <div class="upload-text">点击选择商品主图URL</div>
                 </div>
               </div>
             </template>
           </ImageSelector>
         </el-form-item>
       </re-col>
-      <re-col :value="12" :xs="24" :sm="24">
-        <el-form-item label="手机号" prop="mobile">
-          <!-- 多文件上传 -->
+      <re-col :value="24" :xs="24" :sm="24">
+        <el-form-item
+          label="商品轮播图URL数组(JSON格式)"
+          prop="carousel_images"
+        >
+          <!-- 多图上传 -->
           <ImageSelector
-            v-model="newFormInline.mobile"
+            v-model="newFormInline.carousel_images"
             :multiple="true"
-            :max-count="10"
-            file-type="file"
+            :max-count="9"
+            file-type="image"
           >
             <template #trigger="{ open }">
-              <div class="files-upload-container">
-                <el-button type="primary" @click="open">
-                  <el-icon><Upload /></el-icon>
-                  点击选择手机号
-                </el-button>
-                <!-- 已选择的文件列表 -->
-                <div v-if="newFormInline.mobile && newFormInline.mobile.length > 0" class="selected-files">
-                  <div 
-                    v-for="(file, index) in newFormInline.mobile" 
-                    :key="index" 
-                    class="file-item"
+              <div class="images-upload-container">
+                <!-- 已选择的图片预览 -->
+                <div class="selected-images">
+                  <div
+                    v-for="(image, index) in Array.isArray(
+                      newFormInline.carousel_images
+                    )
+                      ? newFormInline.carousel_images
+                      : newFormInline.carousel_images
+                        ? JSON.parse(newFormInline.carousel_images)
+                        : []"
+                    :key="index"
+                    class="image-preview"
                   >
-                    <el-icon><Document /></el-icon>
-                    <span class="file-name">
-                      {{ 
-                        typeof file === 'object' && file.fileName 
-                          ? file.fileName 
-                          : '文件' + (index + 1) 
-                      }}
-                    </span>
-                    <el-icon class="remove-file" @click.stop="removeImage('mobile', index)">
-                      <Close />
-                    </el-icon>
+                    <img :src="getFileUrl(image)" class="preview-img" />
+                    <div class="image-overlay">
+                      <el-icon
+                        class="preview-icon"
+                        @click.stop="previewImage(image)"
+                      >
+                        <ZoomIn />
+                      </el-icon>
+                      <el-icon
+                        class="remove-icon"
+                        @click.stop="removeImage('carousel_images', index)"
+                      >
+                        <Delete />
+                      </el-icon>
+                    </div>
                   </div>
+                </div>
+                <!-- 添加图片按钮 -->
+                <div class="add-image-btn" @click="open">
+                  <el-icon class="add-icon"><Plus /></el-icon>
+                  <div class="add-text">添加商品轮播图URL数组(JSON格式)</div>
                 </div>
               </div>
             </template>
           </ImageSelector>
+        </el-form-item>
+      </re-col>
+      <re-col :value="24" :xs="24" :sm="24">
+        <el-form-item label="附件文件URL" prop="attachment">
+          <!-- 单文件上传 -->
+          <ImageSelector
+            v-model="newFormInline.attachment"
+            :multiple="false"
+            file-type="file"
+          >
+            <template #trigger="{ open }">
+              <div class="file-upload-container">
+                <el-button type="primary" @click="open">
+                  <el-icon><Upload /></el-icon>
+                  点击选择附件文件URL
+                </el-button>
+                <div v-if="newFormInline.attachment" class="selected-file">
+                  <el-icon><Document /></el-icon>
+                  <span class="file-name">
+                    {{
+                      (newFormInline.attachment || "").split("/").pop() ||
+                      "已选择文件"
+                    }}
+                  </span>
+                  <el-icon
+                    class="remove-file"
+                    @click.stop="newFormInline.attachment = null"
+                  >
+                    <Close />
+                  </el-icon>
+                </div>
+              </div>
+            </template>
+          </ImageSelector>
+        </el-form-item>
+      </re-col>
+      <re-col :value="24" :xs="24" :sm="24">
+        <el-form-item label="商品状态(1:上架,0:下架)" prop="status">
+          <!-- 单选按钮 -->
+          <el-radio-group v-model="newFormInline.status">
+            <!-- 这里可以根据字典类型动态加载选项 -->
+            <el-radio label="1">选项1</el-radio>
+            <el-radio label="2">选项2</el-radio>
+          </el-radio-group>
         </el-form-item>
       </re-col>
     </el-row>

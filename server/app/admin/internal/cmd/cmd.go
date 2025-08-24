@@ -23,6 +23,7 @@ var (
 			s.AddStaticPath("/uploads", "./uploads")
 
 			s.Group("/admin", func(group *ghttp.RouterGroup) {
+				group.Middleware(middleware.CORS) // 添加CORS中间件
 				group.Middleware(ghttp.MiddlewareHandlerResponse)
 				group.Middleware(middleware.Auth) // 添加认证中间件
 

@@ -9,6 +9,7 @@ import (
 	"server/app/admin/internal/controller/menu"
 	"server/app/admin/internal/controller/role"
 	"server/app/admin/internal/controller/user"
+	"server/app/admin/internal/controller/product"
 )
 
 // ControllerFactory 控制器工厂函数类型
@@ -24,6 +25,7 @@ var ControllerRegistry = map[string]ControllerFactory{
 	"dict":       func() interface{} { return dict.NewV1() },
 	"attachment": func() interface{} { return attachment.NewV1() },
 	"member":     func() interface{} { return member.NewV1() },
+	"product": func() interface{} { return product.NewV1() },
 }
 
 // GetAllControllers 获取所有控制器实例

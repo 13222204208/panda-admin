@@ -67,8 +67,18 @@ func (s *sMember) CreateMember(ctx context.Context, in v1.CreateMemberReq) (out 
 		return nil, gerror.New("用户名不能为空")
 	}
 	// 验证必填字段
-	if in.Mobile == nil || *in.Mobile == "" {
-		return nil, gerror.New("手机号不能为空")
+	if in.Email == nil || *in.Email == "" {
+		return nil, gerror.New("邮箱不能为空")
+	}
+	// 检查用户名唯一性
+	if in.Username != nil {
+		count, err := dao.Member.Ctx(ctx).Where(dao.Member.Columns().Username, *in.Username).Count()
+		if err != nil {
+			return nil, gerror.Wrap(err, "检查用户名唯一性失败")
+		}
+		if count > 0 {
+			return nil, gerror.New("用户名已存在")
+		}
 	}
 
 	// 构建插入数据
@@ -78,6 +88,9 @@ func (s *sMember) CreateMember(ctx context.Context, in v1.CreateMemberReq) (out 
 	}
 	if in.Email != nil {
 		data[dao.Member.Columns().Email] = *in.Email
+	}
+	if in.Img != nil {
+		data[dao.Member.Columns().Img] = *in.Img
 	}
 	if in.Mobile != nil {
 		data[dao.Member.Columns().Mobile] = *in.Mobile
@@ -105,6 +118,19 @@ func (s *sMember) UpdateMember(ctx context.Context, in v1.UpdateMemberReq) (out 
 	if count == 0 {
 		return nil, gerror.New("会员信息表不存在")
 	}
+	// 检查用户名唯一性（排除当前记录）
+	if in.Username != nil {
+		count, err := dao.Member.Ctx(ctx).
+			Where(dao.Member.Columns().Username, *in.Username).
+			WhereNot(dao.Member.Columns().Id, in.Id).
+			Count()
+		if err != nil {
+			return nil, gerror.Wrap(err, "检查用户名唯一性失败")
+		}
+		if count > 0 {
+			return nil, gerror.New("用户名已存在")
+		}
+	}
 
 	// 动态构建更新数据
 	updateData := g.Map{}
@@ -113,6 +139,9 @@ func (s *sMember) UpdateMember(ctx context.Context, in v1.UpdateMemberReq) (out 
 	}
 	if in.Email != nil {
 		updateData[dao.Member.Columns().Email] = *in.Email
+	}
+	if in.Img != nil {
+		updateData[dao.Member.Columns().Img] = *in.Img
 	}
 	if in.Mobile != nil {
 		updateData[dao.Member.Columns().Mobile] = *in.Mobile

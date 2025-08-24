@@ -25,6 +25,8 @@ type Column struct {
 	IsList         bool   `json:"isList"`         // 是否显示在列表
 	IsPointer      bool   `json:"isPointer"`      // 是否指针类型
 	IsUnique       bool   `json:"isUnique"`       // 是否唯一
+	IsEdit         bool   `json:"isEdit"`         // 是否编辑
+	HtmlType       string `json:"htmlType"`       // 前端组件类型
 	ValidationRule string `json:"validationRule"` // 验证规则
 }
 
