@@ -11,6 +11,8 @@ import type { UploadFile, UploadRequestOptions } from "element-plus";
 import Upload from "~icons/ep/upload";
 import Delete from "~icons/ep/delete";
 import Refresh from "~icons/ep/refresh";
+import EditPen from "~icons/ep/edit-pen";
+import Download from "~icons/ep/download";
 
 defineOptions({
   name: "AttachmentManagement"
