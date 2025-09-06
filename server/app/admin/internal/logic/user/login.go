@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	// TokenExpireTime Token过期时间
+	// TokenExpireTime Token过期时间 (2小时)
 	TokenExpireTime = 2 * time.Hour
-	// RefreshTokenExpireTime 刷新Token过期时间
+	// RefreshTokenExpireTime 刷新Token过期时间 (30天)
 	RefreshTokenExpireTime = 30 * 24 * time.Hour
 )
 

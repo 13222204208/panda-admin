@@ -48,8 +48,18 @@ export function getToken(): DataInfo<number> {
  * 将`avatar`、`username`、`nickname`、`roles`、`permissions`、`refreshToken`、`expires`这七条信息放在key值为`user-info`的localStorage里（利用`multipleTabsKey`当浏览器完全关闭后自动销毁）
  */
 export function setToken(data: DataInfo<Date>) {
+  // 添加空值检查
+  if (!data) {
+    console.error("setToken: data is null or undefined");
+    return;
+  }
   let expires = 0;
   const { accessToken, refreshToken } = data;
+  // 检查必要字段
+  if (!accessToken || !refreshToken) {
+    console.error("setToken: accessToken or refreshToken is missing");
+    return;
+  }
   const { isRemembered, loginDay } = useUserStoreHook();
   expires = new Date(data.expires).getTime(); // 如果后端直接设置时间戳，将此处代码改为expires = data.expires，然后把上面的DataInfo<Date>改成DataInfo<number>即可
   const cookieString = JSON.stringify({ accessToken, expires, refreshToken });

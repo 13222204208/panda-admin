@@ -5,7 +5,6 @@ import (
 	"server/app/admin/internal/controller/department"
 	"server/app/admin/internal/controller/dict"
 	"server/app/admin/internal/controller/generate"
-	"server/app/admin/internal/controller/member"
 	"server/app/admin/internal/controller/menu"
 	"server/app/admin/internal/controller/role"
 	"server/app/admin/internal/controller/user"
@@ -23,7 +22,6 @@ var ControllerRegistry = map[string]ControllerFactory{
 	"generate":   func() interface{} { return generate.NewV1() },
 	"dict":       func() interface{} { return dict.NewV1() },
 	"attachment": func() interface{} { return attachment.NewV1() },
-	"member":     func() interface{} { return member.NewV1() },
 }
 
 // GetAllControllers 获取所有控制器实例

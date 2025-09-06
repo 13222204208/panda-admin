@@ -88,10 +88,23 @@ class PureHttp {
                     useUserStoreHook()
                       .handRefreshToken({ refreshToken: data.refreshToken })
                       .then(res => {
-                        const token = res.data.accessToken;
-                        config.headers["Authorization"] = formatToken(token);
-                        PureHttp.requests.forEach(cb => cb(token));
+                        if (res && res.data && res.data.accessToken) {
+                          const token = res.data.accessToken;
+                          config.headers["Authorization"] = formatToken(token);
+                          PureHttp.requests.forEach(cb => cb(token));
+                          PureHttp.requests = [];
+                        } else {
+                          console.error("Refresh token response invalid:", res);
+                          // 刷新失败，清除请求队列
+                          PureHttp.requests = [];
+                          // 跳转到登录页
+                          useUserStoreHook().logOut();
+                        }
+                      })
+                      .catch(error => {
+                        console.error("Refresh token failed:", error);
                         PureHttp.requests = [];
+                        useUserStoreHook().logOut();
                       })
                       .finally(() => {
                         PureHttp.isRefreshing = false;

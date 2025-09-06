@@ -81,7 +81,11 @@ export const useUserStore = defineStore("panda-user", {
         getLogin(data)
           .then(data => {
             console.log("登陆后结果", data);
-            if (data?.code === 0) setToken(data.data);
+            if (data?.code === 0 && data.data) {
+              setToken(data.data);
+            } else {
+              console.error("Login failed or data is missing:", data);
+            }
             resolve(data);
           })
           .catch(error => {
@@ -104,12 +108,23 @@ export const useUserStore = defineStore("panda-user", {
       return new Promise<RefreshTokenResult>((resolve, reject) => {
         refreshTokenApi(data)
           .then(data => {
-            if (data) {
+            if (data && data.data) {
               setToken(data.data);
               resolve(data);
+            } else {
+              console.log(
+                "Refresh token failed: data is null or undefined",
+                data
+              );
+              // 刷新失败，跳转到登录页
+              this.logOut();
+              reject(new Error("Refresh token failed"));
             }
           })
           .catch(error => {
+            console.error("Refresh token error:", error);
+            // 刷新失败，跳转到登录页
+            this.logOut();
             reject(error);
           });
       });
